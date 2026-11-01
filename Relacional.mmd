@@ -1,0 +1,118 @@
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#e6eef8','primaryBorderColor':'#2f6db5','primaryTextColor':'#0f172a','lineColor':'#5b6b7f','tertiaryColor':'#f1f5f9','fontFamily':'Manrope, Segoe UI, Arial','fontSize':'15px'}}}%%
+erDiagram
+    SERIE ||--o{ EVENTO : agrupa
+    EVENTO ||--o{ ATIVIDADE : possui
+    ATIVIDADE ||--o{ SESSAO : realiza
+    ESPACO ||--o{ SESSAO : recebe
+    ESPACO ||--o{ ESPACO_RECURSO : oferece
+    RECURSO ||--o{ ESPACO_RECURSO : esta_em
+    EVENTO ||--o{ PROMOCAO_PESSOA : alvo
+    PESSOA ||--o{ PROMOCAO_PESSOA : promove
+    EVENTO ||--o{ PROMOCAO_ORGANIZACAO : alvo
+    ORGANIZACAO ||--o{ PROMOCAO_ORGANIZACAO : promove
+    PESSOA ||--o{ PAPEL_EVENTO : exerce
+    EVENTO ||--o{ PAPEL_EVENTO : tem
+    PESSOA ||--o{ PAPEL_ATIVIDADE : exerce
+    ATIVIDADE ||--o{ PAPEL_ATIVIDADE : tem
+    PESSOA ||--o{ INSCRICAO_EVENTO : faz
+    EVENTO ||--o{ INSCRICAO_EVENTO : recebe
+    PESSOA ||--o{ INSCRICAO_SESSAO : faz
+    SESSAO ||--o{ INSCRICAO_SESSAO : recebe
+    SESSAO ||--o{ HISTORICO_SESSAO : gera
+    ESPACO ||--o{ HISTORICO_SESSAO : referencia
+
+    SERIE {
+      bigint id PK
+      varchar nome UK
+    }
+    ORGANIZACAO {
+      bigint id PK
+      varchar nome
+      varchar tipo
+    }
+    PESSOA {
+      bigint id PK
+      varchar nome
+      varchar email UK
+    }
+    ESPACO {
+      bigint id PK
+      varchar nome UK
+      integer capacidade
+    }
+    RECURSO {
+      bigint id PK
+      varchar nome UK
+    }
+    EVENTO {
+      bigint id PK
+      bigint serie_id FK
+      varchar nome
+      date data_inicio
+      date data_fim
+    }
+    ATIVIDADE {
+      bigint id PK
+      bigint evento_id FK
+      varchar titulo
+      text descricao
+      varchar tipo
+    }
+    SESSAO {
+      bigint id PK
+      bigint atividade_id FK
+      bigint espaco_id FK
+      date data
+      time hora_inicio
+      time hora_fim
+      interval duracao
+      boolean requer_inscricao
+      integer limite_vagas
+    }
+    ESPACO_RECURSO {
+      bigint espaco_id PK,FK
+      bigint recurso_id PK,FK
+    }
+    PROMOCAO_PESSOA {
+      bigint evento_id PK,FK
+      bigint pessoa_id PK,FK
+    }
+    PROMOCAO_ORGANIZACAO {
+      bigint evento_id PK,FK
+      bigint organizacao_id PK,FK
+    }
+    PAPEL_EVENTO {
+      bigint pessoa_id PK,FK
+      bigint evento_id PK,FK
+      varchar papel PK
+    }
+    PAPEL_ATIVIDADE {
+      bigint pessoa_id PK,FK
+      bigint atividade_id PK,FK
+      varchar papel PK
+    }
+    INSCRICAO_EVENTO {
+      bigint pessoa_id PK,FK
+      bigint evento_id PK,FK
+      varchar status
+      timestamp data_inscricao
+    }
+    INSCRICAO_SESSAO {
+      bigint pessoa_id PK,FK
+      bigint sessao_id PK,FK
+      varchar status
+      timestamp data_inscricao
+    }
+    HISTORICO_SESSAO {
+      bigint id PK
+      bigint sessao_id FK
+      date data_anterior
+      time hora_inicio_anterior
+      time hora_fim_anterior
+      bigint espaco_anterior_id FK
+      date data_nova
+      time hora_inicio_nova
+      time hora_fim_nova
+      bigint espaco_novo_id FK
+      timestamp alterado_em
+    }

@@ -1,0 +1,50 @@
+PROJETO DE BASES DE DADOS - RESUMO PARA O GRUPO
+
+Pessoal, segue o projeto de BD praticamente pronto. Abaixo esta um resumo do que foi feito, como tudo se encaixa e o que ainda precisa ser preenchido antes de enviar. A ideia e que qualquer um consiga entender o trabalho so de ler isto aqui. As imagens ER.png e Relacional.png mostram os dois diagramas, e o arquivo Diagramas.pdf traz os dois juntos.
+
+O QUE O SISTEMA FAZ
+
+E um sistema de gestao de eventos e dos espacos onde eles acontecem. Um evento tem um periodo e uma programacao, formada por atividades como palestras e workshops. Cada atividade pode acontecer em uma ou mais sessoes, e cada sessao ocorre numa data, num horario e num espaco. As pessoas se inscrevem no evento e, nas sessoes com vaga limitada, tambem se inscrevem na sessao. Pessoas e organizacoes podem promover eventos, e pessoas podem atuar como palestrantes, instrutores ou organizadores.
+
+As tecnologias sao as exigidas pelo enunciado, ou seja, PostgreSQL para o banco, Python para o prototipo e Ollama rodando um modelo de linguagem local para transformar perguntas em portugues em SQL.
+
+AS SEIS DECISOES DE MODELAGEM
+
+1. Pessoas e organizacoes sao separadas, e um evento pode ter varios promotores de qualquer uma das duas naturezas.
+2. Cada pessoa tem um cadastro so. Ser ouvinte e estar inscrito no evento, e os papeis de atuacao ficam registrados a parte, podendo se acumular.
+3. A atividade guarda titulo, descricao e tipo, e a sessao guarda a data, o horario e o espaco de cada realizacao concreta.
+4. Cada edicao e um evento proprio, e edicoes recorrentes sao agrupadas por uma serie opcional.
+5. A inscricao em sessao so e exigida nas sessoes restritas e depende de inscricao confirmada no evento. O limite e o da sessao quando existe, senao a capacidade do espaco.
+6. A programacao atual fica na sessao, e toda mudanca de data, horario ou espaco vai para uma tabela de historico.
+
+COMO O BANCO FICOU
+
+Sao dezesseis tabelas. As de cadastro sao serie, organizacao, pessoa, espaco e recurso. A estrutura do evento fica em evento, atividade e sessao. As ligacoes entre pessoas, eventos, atividades, sessoes e recursos ficam em tabelas de relacionamento como promocao_pessoa, promocao_organizacao, espaco_recurso, papel_evento, papel_atividade, inscricao_evento e inscricao_sessao. As mudancas de programacao ficam em historico_sessao.
+
+O banco tem quatro triggers com finalidades diferentes. A primeira garante que a sessao caiba no periodo do evento. A segunda impede que duas sessoes ocupem o mesmo espaco em horarios sobrepostos. A terceira controla a admissao nas sessoes, exigindo inscricao no evento e respeitando o limite de vagas. A quarta grava o historico sempre que a programacao de uma sessao muda.
+
+AS CINCO CONSULTAS
+
+1. A programacao completa de um evento.
+2. A ocupacao de cada sessao restrita, com vagas confirmadas e restantes.
+3. As pessoas inscritas em todas as sessoes restritas de um evento.
+4. As tres sessoes de maior ocupacao de cada evento, com ranking.
+5. Os espacos com certa capacidade que estao livres num intervalo de tempo.
+
+O PROTOTIPO
+
+E uma aplicacao de terminal em Python. Ela conecta no banco, executa as cinco consultas e tambem aceita uma pergunta escrita em portugues, que e convertida em SQL pelo modelo local do Ollama, executada em modo somente leitura e exibida na tela. Basta rodar com python main.py depois de instalar as dependencias.
+
+O QUE JA FOI TESTADO
+
+O banco inteiro foi criado e carregado num PostgreSQL de verdade, sem nenhum erro. As cinco consultas foram executadas e retornaram os resultados esperados, e as quatro triggers foram testadas e rejeitaram corretamente as situacoes invalidas.
+
+O QUE FALTA ANTES DE ENVIAR
+
+1. Preencher o numero do grupo e os nomes e NUSP de todos no comeco do Projeto.txt e no Instrucoes.txt.
+2. Exportar os dois diagramas para PDF. O ER esta no arquivo ER.drawio, que abre no site do draw.io, e o relacional esta no Relacional.mmd, que abre no mermaid. Os dois exportam para PDF em poucos cliques. As imagens ER.png e Relacional.png servem apenas para visualizar rapido.
+3. Compactar tudo num unico arquivo zip, com o prototipo dentro de Prototipo.zip, conforme o enunciado.
+
+LEMBRETE IMPORTANTE
+
+A nota tem duas partes. Quarenta por cento vem deste projeto do grupo, mas sessenta por cento vem de uma avaliacao individual em laboratorio, feita sozinho e sem IA, com questoes geradas a partir deste nosso projeto. Entao vale a pena cada um dar uma olhada no banco e entender as consultas e as triggers, porque e exatamente sobre isso que seremos testados.
