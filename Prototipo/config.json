@@ -1,0 +1,13 @@
+{
+  "database": {
+    "host": "127.0.0.1",
+    "port": 5433,
+    "dbname": "eventos",
+    "user": "projetobd_app",
+    "password": "dS4EII2BrxW81Jd_KChXjTSZne3wh6lP"
+  },
+  "ollama": {
+    "host": "http://localhost:11434",
+    "model": "qwen2.5-coder:3b"
+  }
+}
