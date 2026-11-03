@@ -36,100 +36,160 @@ def carregar_ddl():
 
 CONSULTAS = [
     {
-        "titulo": "Programacao completa do evento 2",
+        "titulo": "Programacao atual do evento 1",
         "sql": """
-            SELECT e.nome AS evento, a.titulo AS atividade,
-                   s.data, s.hora_inicio, s.hora_fim, ep.nome AS espaco
+            SELECT e.evento_id, e.nome AS evento,
+                   a.atividade_id, a.titulo AS atividade, s.num_sessao,
+                   s.data_hora_inicio, s.data_hora_fim, s.duracao,
+                   s.status AS situacao_sessao, ep.nome AS espaco,
+                   l.status_alocacao AS situacao_alocacao
             FROM evento e
-            JOIN atividade a ON a.evento_id = e.id
-            JOIN sessao s ON s.atividade_id = a.id
-            JOIN espaco ep ON ep.id = s.espaco_id
-            WHERE e.id = 2
-            ORDER BY s.data, s.hora_inicio
+            JOIN atividade a ON a.evento_id = e.evento_id
+            JOIN sessao s ON s.atividade_id = a.atividade_id
+            LEFT JOIN alocacao l
+                   ON (l.atividade_id, l.num_sessao) = (s.atividade_id, s.num_sessao)
+            LEFT JOIN espaco ep ON ep.espaco_id = l.espaco_id
+            WHERE e.evento_id = 1
+            ORDER BY s.data_hora_inicio, a.atividade_id, s.num_sessao;
         """,
     },
     {
-        "titulo": "Ocupacao das sessoes que exigem inscricao",
+        "titulo": "Pendencias de recursos das sessoes planejadas",
         "sql": """
-            SELECT s.id AS sessao_id, a.titulo AS atividade, s.data,
-                   COALESCE(s.limite_vagas, ep.capacidade) AS limite_efetivo,
-                   count(i.pessoa_id) FILTER (WHERE i.status = 'confirmada') AS confirmadas,
-                   COALESCE(s.limite_vagas, ep.capacidade)
-                       - count(i.pessoa_id) FILTER (WHERE i.status = 'confirmada') AS vagas_restantes
-            FROM sessao s
-            JOIN atividade a ON a.id = s.atividade_id
-            JOIN espaco ep ON ep.id = s.espaco_id
-            LEFT JOIN inscricao_sessao i ON i.sessao_id = s.id
-            WHERE s.requer_inscricao = true
-            GROUP BY s.id, a.titulo, s.data, s.limite_vagas, ep.capacidade
-            ORDER BY s.id
+            WITH recursos_planejados AS (
+                SELECT e.evento_id, e.nome AS evento,
+                       a.atividade_id, a.titulo AS atividade, s.num_sessao,
+                       s.data_hora_inicio, ep.nome AS espaco,
+                       COALESCE(l.status_alocacao, 'sem_alocacao') AS situacao_alocacao,
+                       r.recurso_id, r.nome AS recurso, n.quantidade_necessaria,
+                       CASE WHEN l.status_alocacao IN ('planejada', 'confirmada')
+                            THEN COALESCE(u.quantidade_alocada, 0)
+                            ELSE 0 END AS quantidade_alocada
+                FROM evento e
+                JOIN atividade a ON a.evento_id = e.evento_id
+                JOIN sessao s ON s.atividade_id = a.atividade_id
+                JOIN sessao_recurso_necessario n
+                     ON (n.atividade_id, n.num_sessao) = (s.atividade_id, s.num_sessao)
+                JOIN recurso r ON r.recurso_id = n.recurso_id
+                LEFT JOIN alocacao l
+                       ON (l.atividade_id, l.num_sessao) = (s.atividade_id, s.num_sessao)
+                LEFT JOIN espaco ep ON ep.espaco_id = l.espaco_id
+                LEFT JOIN alocacao_recurso u
+                       ON u.alocacao_id = l.alocacao_id AND u.recurso_id = n.recurso_id
+                WHERE s.status = 'planejada'
+                  AND e.status IN ('planejado', 'ativo')
+            )
+            SELECT evento_id, evento, atividade_id, atividade, num_sessao,
+                   data_hora_inicio, espaco, situacao_alocacao,
+                   recurso_id, recurso, quantidade_necessaria, quantidade_alocada,
+                   quantidade_necessaria - quantidade_alocada AS quantidade_faltante
+            FROM recursos_planejados
+            WHERE quantidade_alocada < quantidade_necessaria
+            ORDER BY evento_id, atividade_id, num_sessao, recurso_id;
         """,
     },
     {
-        "titulo": "Pessoas confirmadas em todas as sessoes restritas do evento 2",
+        "titulo": "Pessoas confirmadas em todas as sessoes restritas do evento 5",
         "sql": """
-            SELECT p.id, p.nome
+            WITH parametros AS (
+                SELECT 5::bigint AS evento_id
+            ),
+            sessoes_restritas AS (
+                SELECT s.atividade_id, s.num_sessao
+                FROM atividade a
+                JOIN parametros par ON par.evento_id = a.evento_id
+                JOIN sessao s ON s.atividade_id = a.atividade_id
+                JOIN alocacao l
+                     ON (l.atividade_id, l.num_sessao) = (s.atividade_id, s.num_sessao)
+                WHERE s.inscricao_adicional
+                  AND s.status = 'confirmada'
+                  AND l.status_alocacao = 'confirmada'
+            )
+            SELECT p.agente_id AS pessoa_id, p.nome
             FROM pessoa p
-            JOIN inscricao_evento ie
-                 ON ie.pessoa_id = p.id AND ie.evento_id = 2 AND ie.status = 'confirmada'
-            WHERE NOT EXISTS (
-                SELECT 1
-                FROM sessao s
-                JOIN atividade a ON a.id = s.atividade_id
-                WHERE a.evento_id = 2 AND s.requer_inscricao = true
-                  AND NOT EXISTS (
-                      SELECT 1 FROM inscricao_sessao i
-                      WHERE i.sessao_id = s.id
-                        AND i.pessoa_id = p.id
+            JOIN inscricao_evento ie ON ie.pessoa_id = p.agente_id
+            JOIN parametros par ON par.evento_id = ie.evento_id
+            WHERE ie.status = 'confirmada'
+              AND EXISTS (SELECT 1 FROM sessoes_restritas)
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM sessoes_restritas s
+                  WHERE NOT EXISTS (
+                      SELECT 1
+                      FROM inscricao_sessao i
+                      WHERE i.inscricao_id = ie.inscricao_id
+                        AND (i.atividade_id, i.num_sessao) = (s.atividade_id, s.num_sessao)
                         AND i.status = 'confirmada'
                   )
-            )
-            ORDER BY p.id
-        """,
-    },
-    {
-        "titulo": "Tres sessoes com maior ocupacao em cada evento",
-        "sql": """
-            WITH ocupacao AS (
-                SELECT e.id AS evento_id, s.id AS sessao_id, a.titulo AS atividade,
-                       ep.capacidade,
-                       count(i.pessoa_id) FILTER (WHERE i.status = 'confirmada') AS confirmadas
-                FROM evento e
-                JOIN atividade a ON a.evento_id = e.id
-                JOIN sessao s ON s.atividade_id = a.id
-                JOIN espaco ep ON ep.id = s.espaco_id
-                LEFT JOIN inscricao_sessao i ON i.sessao_id = s.id
-                GROUP BY e.id, s.id, a.titulo, ep.capacidade
-            ),
-            ranking AS (
-                SELECT o.*,
-                       round(o.confirmadas::numeric / o.capacidade, 3) AS taxa_ocupacao,
-                       row_number() OVER (
-                           PARTITION BY o.evento_id
-                           ORDER BY o.confirmadas::numeric / o.capacidade DESC, o.sessao_id
-                       ) AS posicao
-                FROM ocupacao o
-            )
-            SELECT evento_id, sessao_id, atividade, confirmadas, capacidade, taxa_ocupacao, posicao
-            FROM ranking
-            WHERE posicao <= 3
-            ORDER BY evento_id, posicao
-        """,
-    },
-    {
-        "titulo": "Espacos para 50 ou mais pessoas livres em 15/09/2026 entre 9h e 11h",
-        "sql": """
-            SELECT ep.id, ep.nome, ep.capacidade
-            FROM espaco ep
-            WHERE ep.capacidade >= 50
-              AND NOT EXISTS (
-                  SELECT 1 FROM sessao s
-                  WHERE s.espaco_id = ep.id
-                    AND s.data = DATE '2026-09-15'
-                    AND s.hora_inicio < TIME '11:00'
-                    AND s.hora_fim > TIME '09:00'
               )
-            ORDER BY ep.capacidade DESC
+            ORDER BY p.agente_id;
+        """,
+    },
+    {
+        "titulo": "Tres primeiras pessoas de cada fila de espera elegivel",
+        "sql": """
+            WITH fila AS (
+                SELECT e.evento_id, e.nome AS evento,
+                       a.atividade_id, a.titulo AS atividade, s.num_sessao,
+                       ie.inscricao_id, p.agente_id AS pessoa_id, p.nome,
+                       i.data_inscricao,
+                       row_number() OVER (
+                           PARTITION BY s.atividade_id, s.num_sessao
+                           ORDER BY i.data_inscricao, i.inscricao_id
+                       ) AS posicao
+                FROM inscricao_sessao i
+                JOIN inscricao_evento ie ON ie.inscricao_id = i.inscricao_id
+                JOIN pessoa p ON p.agente_id = ie.pessoa_id
+                JOIN sessao s
+                     ON (s.atividade_id, s.num_sessao) = (i.atividade_id, i.num_sessao)
+                JOIN atividade a ON a.atividade_id = s.atividade_id
+                JOIN evento e ON e.evento_id = a.evento_id AND e.evento_id = ie.evento_id
+                JOIN alocacao l
+                     ON (l.atividade_id, l.num_sessao) = (s.atividade_id, s.num_sessao)
+                WHERE i.status = 'espera'
+                  AND ie.status = 'confirmada'
+                  AND e.status = 'ativo'
+                  AND s.status = 'confirmada'
+                  AND s.inscricao_adicional
+                  AND l.status_alocacao = 'confirmada'
+            )
+            SELECT evento_id, evento, atividade_id, atividade, num_sessao,
+                   inscricao_id, pessoa_id, nome, data_inscricao, posicao
+            FROM fila
+            WHERE posicao <= 3
+            ORDER BY evento_id, atividade_id, num_sessao, posicao;
+        """,
+    },
+    {
+        "titulo": "Espacos autorizados ao evento 2, com 20 lugares ou mais, livres em 10/11/2026 das 9h as 11h",
+        "sql": """
+            WITH parametros AS (
+                SELECT 2::bigint AS evento_id, 20 AS capacidade_minima,
+                       TIMESTAMP '2026-11-10 09:00' AS inicio,
+                       TIMESTAMP '2026-11-10 11:00' AS fim
+            )
+            SELECT ep.espaco_id, ep.nome, ep.capacidade
+            FROM parametros par
+            JOIN evento e ON e.evento_id = par.evento_id
+            JOIN evento_espaco ee ON ee.evento_id = e.evento_id
+            JOIN espaco ep ON ep.espaco_id = ee.espaco_id
+            WHERE e.status IN ('planejado', 'ativo')
+              AND ep.capacidade >= par.capacidade_minima
+              AND par.fim > par.inicio
+              AND par.inicio >= e.data_inicio::timestamp
+              AND par.fim <= (e.data_fim + 1)::timestamp
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM alocacao l
+                  JOIN sessao s
+                       ON (s.atividade_id, s.num_sessao) = (l.atividade_id, l.num_sessao)
+                  WHERE l.espaco_id = ep.espaco_id
+                    AND l.status_alocacao = 'confirmada'
+                    AND s.status <> 'cancelada'
+                    AND s.data_hora_inicio < par.fim
+                    AND s.data_hora_fim > par.inicio
+              )
+            ORDER BY ep.capacidade DESC, ep.espaco_id;
         """,
     },
 ]
@@ -176,14 +236,15 @@ def executar_leitura_segura(conn, sql):
     with conn.transaction():
         with conn.cursor() as cur:
             cur.execute("SET LOCAL transaction_read_only = on")
-            cur.execute(sql)
+            # Protocolo preparado recusa multiplos comandos na mesma resposta.
+            cur.execute(sql, prepare=True)
             colunas = [d.name for d in cur.description] if cur.description else []
             linhas = cur.fetchall() if cur.description else []
     return colunas, linhas
 
 
 def limpar_sql(texto):
-    """Remove raciocinio do modelo e cercas de codigo, devolvendo um unico comando."""
+    """Remove cercas/raciocinio sem truncar ponto e virgula dentro de literais."""
     texto = re.sub(r"<think>.*?</think>", "", texto, flags=re.DOTALL)
     texto = texto.strip()
     if "```" in texto:
@@ -194,9 +255,7 @@ def limpar_sql(texto):
                 bloco = bloco[3:]
             texto = bloco.strip()
             break
-    if ";" in texto:
-        texto = texto.split(";", 1)[0]
-    return texto.strip()
+    return texto.strip().rstrip(";").strip()
 
 
 def eh_leitura(sql):
@@ -205,18 +264,22 @@ def eh_leitura(sql):
 
 
 def gerar_sql(pergunta, ddl, client):
+    # Tabelas e views bastam para SELECT; omitir corpos de triggers reduz memoria.
+    estruturas = re.findall(r"CREATE (?:TABLE|VIEW)\b.*?;", ddl, flags=re.I | re.S)
+    esquema = "\n\n".join(estruturas) if estruturas else ddl
     prompt = (
         "Voce converte perguntas em portugues para uma unica consulta SQL de "
         "leitura no PostgreSQL. Use exclusivamente as tabelas e colunas do "
         "esquema abaixo. Responda apenas com o comando SQL, sem explicacoes e "
         "sem texto adicional.\n\n"
-        f"Esquema do banco:\n{ddl}\n\n"
+        f"Esquema do banco:\n{esquema}\n\n"
         f"Pergunta: {pergunta}\n"
         "SQL:"
     )
     resposta = client.chat(
         model=config["ollama"]["model"],
         messages=[{"role": "user", "content": prompt}],
+        options={"temperature": 0, "num_ctx": 4096, "num_predict": 512},
     )
     return limpar_sql(resposta["message"]["content"])
 

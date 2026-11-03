@@ -1,0 +1,175 @@
+erDiagram
+    SERIE {
+        bigint serie_id PK
+        varchar nome
+    }
+
+    AGENTE {
+        bigint agente_id PK "total e dinsjunta"
+        varchar email "obrigatorio; nao e UNIQUE"
+    }
+
+    PESSOA {
+        bigint agente_id PK, FK
+        varchar nome
+        varchar cpf UK "opcional"
+    }
+
+    EMPRESA {
+        bigint agente_id PK, FK
+        varchar nome
+        varchar cnpj UK "opcional"
+    }
+
+    ORGANIZACAO {
+        bigint agente_id PK, FK
+        varchar nome_org
+    }
+
+    AGENTE_TELEFONE {
+        bigint agente_id PK, FK
+        varchar telefone PK
+    }
+
+    ESPACO {
+        bigint espaco_id PK
+        varchar nome
+        varchar tipo
+        integer capacidade
+        varchar rua
+        varchar cep
+        varchar numero
+    }
+
+    RECURSO {
+        bigint recurso_id PK
+        varchar nome UK
+        text descricao
+        varchar unidade_medida
+    }
+
+    EVENTO {
+        bigint evento_id PK
+        bigint serie_id FK "opcional; UK1 com num_edicao"
+        integer num_edicao "UK1 com serie_id; obrigatorio quando ha serie"
+        varchar nome
+        text descricao
+        varchar tipo
+        date data_inicio
+        date data_fim
+        varchar status
+    }
+
+    PROMOCAO_EVENTO {
+        bigint evento_id PK, FK
+        bigint agente_id PK, FK
+    }
+
+    ATIVIDADE {
+        bigint atividade_id PK
+        bigint evento_id FK
+        varchar titulo
+        text descricao
+        varchar tipo_atividade
+    }
+
+    SESSAO {
+        bigint atividade_id PK, FK
+        integer num_sessao PK
+        timestamp data_hora_inicio
+        timestamp data_hora_fim
+        interval duracao "gerada: fim menos inicio"
+        varchar status
+        boolean inscricao_adicional
+        integer limite_vagas
+    }
+
+    EVENTO_ESPACO {
+        bigint evento_id PK, FK
+        bigint espaco_id PK, FK
+    }
+
+    ESPACO_RECURSO {
+        bigint espaco_id PK, FK
+        bigint recurso_id PK, FK
+        integer quantidade_disponivel
+    }
+
+    SESSAO_RECURSO_NECESSARIO {
+        bigint atividade_id PK, FK
+        integer num_sessao PK, FK
+        bigint recurso_id PK, FK
+        integer quantidade_necessaria
+    }
+
+    ALOCACAO {
+        bigint alocacao_id PK
+        bigint atividade_id FK "UK1 com num_sessao"
+        integer num_sessao FK "UK1 com atividade_id"
+        bigint espaco_id FK
+        date data
+        varchar status_alocacao
+    }
+
+    ALOCACAO_RECURSO {
+        bigint alocacao_id PK, FK
+        bigint recurso_id PK, FK
+        integer quantidade_alocada
+    }
+
+    PAPEL_EVENTO {
+        bigint pessoa_id PK, FK
+        bigint evento_id PK, FK
+        varchar funcao PK
+    }
+
+    PAPEL_SESSAO {
+        bigint pessoa_id PK, FK
+        bigint atividade_id PK, FK
+        integer num_sessao PK, FK
+        varchar papel PK
+    }
+
+    INSCRICAO_EVENTO {
+        bigint inscricao_id PK
+        bigint pessoa_id FK "UK1 com evento_id"
+        bigint evento_id FK "UK1 com pessoa_id"
+        timestamp data_inscricao
+        varchar status
+    }
+
+    INSCRICAO_SESSAO {
+        bigint inscricao_id PK, FK
+        bigint atividade_id PK, FK
+        integer num_sessao PK, FK
+        timestamp data_inscricao
+        varchar status
+    }
+
+    SERIE |o..o{ EVENTO : contem
+    EVENTO ||..o{ ATIVIDADE : possui
+    ATIVIDADE ||--|{ SESSAO : tem
+    AGENTE ||--o{ AGENTE_TELEFONE : possui
+    AGENTE ||--o| PESSOA : especializa
+    AGENTE ||--o| EMPRESA : especializa
+    AGENTE ||--o| ORGANIZACAO : especializa
+    EVENTO ||..o{ INSCRICAO_EVENTO : recebe
+    PESSOA ||..o{ INSCRICAO_EVENTO : realiza
+    INSCRICAO_EVENTO ||--o{ INSCRICAO_SESSAO : possui
+    SESSAO ||--o{ INSCRICAO_SESSAO : recebe
+    EVENTO ||--|{ PROMOCAO_EVENTO : tem_promotor
+    AGENTE ||--o{ PROMOCAO_EVENTO : promove
+    EVENTO ||--o{ PAPEL_EVENTO : tem
+    PESSOA ||--o{ PAPEL_EVENTO : exerce
+    PESSOA ||--o{ PAPEL_SESSAO : exerce
+    SESSAO ||--o{ PAPEL_SESSAO : tem
+    EVENTO ||--o{ EVENTO_ESPACO : disponibiliza
+    ESPACO ||--o{ EVENTO_ESPACO : autorizado_para
+    ESPACO ||--o{ ESPACO_RECURSO : dispoe
+    RECURSO ||--o{ ESPACO_RECURSO : esta_em
+    SESSAO ||--o{ SESSAO_RECURSO_NECESSARIO : necessita
+    RECURSO ||--o{ SESSAO_RECURSO_NECESSARIO : exigido_por
+    SESSAO ||..o| ALOCACAO : tem_alocacao_corrente
+    ESPACO ||..o{ ALOCACAO : recebe
+    ALOCACAO ||--o{ ALOCACAO_RECURSO : usa
+    RECURSO ||--o{ ALOCACAO_RECURSO : usado_em

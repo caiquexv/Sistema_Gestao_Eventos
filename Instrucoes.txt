@@ -1,29 +1,33 @@
-INSTRUCOES DE INSTALACAO E EXECUCAO
-Sistema de Gestao de Eventos e Espacos - SCC0640
+INSTRUCOES DE INSTALACAO E EXECUCAO - Projeto Base de Dados
+Sistema de Gestão de Eventos e Espaços - SCC0640
 
-Integrantes
-[Nome Completo - NUSP de cada integrante do grupo]
+# Integrantes
+Breno 
+Caique Martins Costa Xavier nusp: 15573769
+Pedro Augusto Rocha Amaral nusp: 15579192
+Santiago
+Marcus
 
-Requisitos de software
+# Requisitos de software
 PostgreSQL 16 ou superior.
 Python 3.11 ou superior.
-Ollama instalado localmente, com o modelo qwen3:8b ja baixado.
+Ollama instalado localmente, com o modelo qwen2.5-coder:3b ja baixado.
 Bibliotecas Python ollama e psycopg[binary], instaladas a partir do requirements.txt.
 
-Criacao da base
-Crie um banco de dados chamado eventos no PostgreSQL. Em seguida execute o DDL que esta na secao 3 do arquivo Projeto.txt. O DDL cria todas as tabelas, as funcoes e as quatro triggers do sistema. Ele foi escrito para rodar em um banco vazio e termina sem erros.
+# Criacao da base:
+Crie um banco de dados chamado eventos no PostgreSQL. Em seguida execute o DDL que esta na secao 3 do arquivo Projeto.txt. O DDL cria 21 tabelas, duas views, funcoes e triggers de consistencia temporal, alocacao, recursos e inscricoes/fila, com validacoes auxiliares. Execute-o em um banco vazio.
 
-Carga dos dados
-Com a base criada, execute o arquivo DML.sql. Ele popula o banco com dados de demonstracao, incluindo series, eventos, atividades, sessoes, espacos, recursos, pessoas, papeis e inscricoes. O arquivo tambem altera a programacao de duas sessoes, o que gera registros na tabela de historico por meio de trigger.
+# Carga dos dados
+Com as tabelas criadas e vazias, execute integralmente o arquivo DML.sql uma unica vez. Ele insere 1.686 registros ficticios, incluindo series, eventos, atividades, sessoes, espacos, recursos, pessoas, papeis e inscricoes. Demonstra tambem cancelamento, promocao da fila, reinscricao e reagendamento. Somente a programacao corrente e armazenada, sem historico.
 
-Execucao do prototipo
-Entre na pasta Prototipo e instale as dependencias com o comando python -m pip install -r requirements.txt. Confira os dados de conexao e o modelo no arquivo config.json e ajuste apenas esse arquivo caso necessario. Garanta que o Ollama esteja em execucao e que o modelo indicado tenha sido obtido com o comando ollama pull qwen3:8b. Inicie o programa com python main.py.
+# Execucao do protótipo
+Entre na pasta Prototipo e instale as dependencias com o comando python -m pip install -r requirements.txt. Confira os dados de conexao e o modelo no arquivo config.json e ajuste apenas esse arquivo caso necessario. Garanta que o Ollama esteja em execucao e que o modelo indicado tenha sido obtido com o comando ollama pull qwen2.5-coder:3b. Inicie o programa com python main.py.
 
-Uso
+# Uso
 O programa apresenta um menu com tres opcoes. A primeira executa qualquer uma das cinco consultas definidas no projeto. A segunda recebe uma pergunta escrita em portugues, envia ao modelo local pelo Ollama, mostra o SQL gerado, executa a consulta em modo somente leitura e apresenta o resultado ou a mensagem de erro. A terceira encerra o programa.
 
-Modelo utilizado no Ollama
-qwen3:8b
+# Modelo utilizado no Ollama
+qwen2.5-coder:3b
 
-Limitacoes conhecidas
-A conversao de perguntas em SQL depende da qualidade do modelo local e pode, em alguns casos, produzir consultas incorretas, que sao mostradas ao usuario junto com a eventual mensagem de erro do banco. Nao existe interface grafica, pois o enunciado pede uma aplicacao de linha de comando. O controle de vagas nao implementa lista de espera, de modo que inscricoes acima do limite sao apenas recusadas.
+# Limitações conhecidas
+A conversão de perguntas em SQL depende da qualidade do modelo local e pode produzir consultas incorretas, que são mostradas ao usuário junto com a eventual mensagem de erro do banco. A inferencia por CPU em computadores com pouca memoria pode ser lenta; a primeira pergunta tambem precisa carregar o modelo e processar o esquema.
