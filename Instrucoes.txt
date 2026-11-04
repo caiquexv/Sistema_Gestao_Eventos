@@ -8,6 +8,9 @@ Pedro Augusto Rocha Amaral nusp: 15579192
 Santiago
 Marcus
 
+# Organizacao dos arquivos da entrega
+Extraia primeiro o ZIP geral da entrega. Na mesma pasta de Projeto.txt, extraia Prototipo.zip para uma subpasta chamada Prototipo. Essa subpasta deve conter main.py, config.json e requirements.txt; Projeto.txt deve permanecer na pasta imediatamente acima, pois o programa utiliza o DDL e as consultas desse arquivo. O config.json distribuido contem parametros de exemplo: preencha-o com os dados do PostgreSQL local antes de iniciar o programa.
+
 # Requisitos de software
 PostgreSQL 16 ou superior.
 Python 3.11 ou superior.
