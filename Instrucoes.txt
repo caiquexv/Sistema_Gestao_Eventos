@@ -115,8 +115,6 @@ LIMITACOES CONHECIDAS
 - A conversao de perguntas em SQL depende da qualidade do modelo local e
   pode gerar consultas incorretas; nesse caso o SQL e a mensagem de erro do
   banco sao exibidos ao usuario.
-- Apenas consultas de leitura (SELECT/WITH) sao executadas na opcao 2;
-  qualquer outro comando gerado pelo modelo e bloqueado.
 - Em computadores sem GPU ou com pouca memoria a inferencia e lenta; a
   primeira pergunta tambem precisa carregar o modelo e processar o esquema.
 - O sistema armazena somente a programacao corrente, sem historico.
