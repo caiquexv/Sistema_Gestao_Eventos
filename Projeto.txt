@@ -1,33 +1,47 @@
 ============================================================
 SCC0640 - PROJETO DE BASES DE DADOS
 ============================================================
-GRUPO: [preencher com o numero do grupo]
-INTEGRANTES: [preencher com Nome Completo - NUSP de cada integrante]
+
+GRUPO: 
+INTEGRANTES: 
+Breno 
+Caique Martins Costa Xavier  nusp: 15573769
+Pedro Augusto Rocha Amaral   nusp: 15579
+Santiago Vera Martins    nusp: 15487982
+Marcus Vinicius Bravim Alves    nusp: 15474953
+
 MODELO UTILIZADO NO OLLAMA: qwen2.5-coder:3b
+
 ============================================================
+
 1. DESCRICAO FINAL DO SISTEMA
+
 ============================================================
-O sistema gerencia eventos e suas edicoes, atividades, sessoes e alocacoes correntes de espacos e recursos. Promotores sao agentes especializados em pessoas, empresas ou organizacoes nao empresariais. Pessoas podem acumular inscricao no evento, organizacao e atuacao em sessoes. Sessoes restritas possuem controle de vagas e fila de espera FIFO. O banco garante especializacao e participacoes obrigatorias, coerencia temporal, capacidade, ausencia de conflitos, recursos compativeis e integridade das inscricoes, inclusive em operacoes concorrentes. Apenas a programacao atual e armazenada.
+
+O sistema gerencia eventos e suas edições, atividades, sessões e alocações correntes de espaços e recursos. Promotores sao agentes especializados em pessoas, empresas ou organizações nao empresariais. Pessoas podem acumular inscrição no evento, organização e atuação em sessões. Sessoes restritas possuem controle de vagas e fila de espera. O banco garante especialização e participações obrigatórias, coerência temporal, capacidade, ausência de conflitos, recursos compativeis e integridade das inscrições, inclusive em operações concorrentes. Apenas a programação atual e armazenada.
+
 ============================================================
+
 2. DECISOES DE PROJETO
+
 ============================================================
-Q1: Os promotores sao agentes, com especializacao total e disjunta em Pessoa, Empresa e Organizacao nao empresarial; cada agente pertence a exatamente um subtipo e cada evento possui um ou mais promotores, permitindo promocao conjunta.
-Q2: A pessoa possui cadastro unico e pode acumular inscricao como participante, funcoes de organizacao em eventos e papeis de atuacao em sessoes, como palestrante, instrutor e mediador; ser responsavel por uma sessao nao exige inscricao como ouvinte.
-Q3: Cada atividade pertence a um evento e guarda titulo, descricao e tipo; possui uma ou mais sessoes, identificadas pela atividade e pelo numero da sessao, que guardam inicio, fim, status e regras de inscricao; o espaco e os recursos usados ficam na alocacao corrente.
-Q4: Cada evento representa uma edicao concreta, com periodo e programacao proprios, e pode pertencer a uma serie; o numero da edicao e obrigatorio e unico dentro da serie, enquanto eventos avulsos nao possuem serie nem numero de edicao.
-Q5: Sessoes restritas exigem inscricao adicional vinculada a inscricao confirmada no mesmo evento; o limite proprio deve respeitar a capacidade do espaco, a falta de vagas gera espera por ordem de inscricao e o cancelamento de uma confirmacao promove a primeira pessoa elegivel da fila.
-Q6: O sistema armazena somente a programacao atual; alteracoes de data, horario, espaco ou recursos atualizam os registros vigentes apos validacao de integridade, sem preservar versoes anteriores, e uma alteracao rejeitada mantem a programacao anterior por rollback.
+
+Q1: Os promotores sao agentes, com especialização total e disjunta em Pessoa, Empresa e Organizacao; cada agente pertence a exatamente um subtipo e cada evento possui um ou mais promotores, permitindo promoção conjunta.
+Q2: A pessoa possui cadastro unico e pode acumular inscrição como participante, funções de organização em eventos e papéis de atuação em sessões, como palestrante, instrutor e mediador; ser responsável por uma sessão nao exige inscrição como ouvinte.
+Q3: Cada atividade pertence a um evento e guarda titulo, descrição e tipo; possui uma ou mais sessões, identificadas pela atividade e pelo número da sessão, que guardam início, fim, status e regras de inscrição; o espaço e os recursos usados ficam na alocção corrente.
+Q4: Cada evento representa uma edição concreta, com período e programação próprios, e pode pertencer a uma série; o número da edição e obrigatório e unico dentro da série, enquanto eventos avulsos nao possuem serie nem numero de edicao.
+Q5: Sessões restritas exigem inscrição adicional vinculada a inscrição confirmada no mesmo evento; o limite próprio deve respeitar a capacidade do espaço, a falta de vagas gera espera por ordem de inscrição e o cancelamento de uma confirmação promove a primeira pessoa elegível da fila.
+Q6: O sistema armazena somente a programação atual; alterações de data, horário, espaco ou recursos atualizam os registros vigentes apos validação de integridade, sem preservar versões anteriores, e uma alteração rejeitada mantém a programação anterior por rollback.
+
 ============================================================
+
 3. DDL COMPLETO
+
 ============================================================
--- Sistema de Gestao de Eventos e Espacos — MER final
--- PostgreSQL 16+; executar em banco vazio. Nao remove estruturas existentes.
--- Horarios da programacao: America/Sao_Paulo, armazenados sem conversao de fuso.
--- Cadastro/carga em transacoes READ COMMITTED; validacoes compostas no COMMIT.
+
 BEGIN;
 SET LOCAL search_path = public;
 
--- 1. Cadastros e especializacao total/disjunta de Agente
 CREATE TABLE serie (
     serie_id bigint GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
     nome varchar(150) NOT NULL CHECK (btrim(nome) <> '')
@@ -72,7 +86,6 @@ CREATE TABLE recurso (
         CHECK (btrim(unidade_medida) <> '')
 );
 
--- 2. Eventos, edicoes, atividades e sessoes (entidade fraca)
 CREATE TABLE evento (
     evento_id bigint GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
     serie_id bigint REFERENCES serie ON DELETE RESTRICT ON UPDATE CASCADE,
@@ -117,7 +130,6 @@ CREATE TABLE sessao (
     CHECK (inscricao_adicional OR limite_vagas IS NULL)
 );
 
--- 3. Disponibilidade, alocacao corrente e quantidades de recursos
 CREATE TABLE evento_espaco (
     evento_id bigint REFERENCES evento ON DELETE CASCADE ON UPDATE CASCADE,
     espaco_id bigint REFERENCES espaco ON DELETE CASCADE ON UPDATE CASCADE,
@@ -157,7 +169,6 @@ CREATE TABLE alocacao_recurso (
     PRIMARY KEY (alocacao_id, recurso_id)
 );
 
--- 4. Papeis independentes e inscricoes correntes
 CREATE TABLE papel_evento (
     pessoa_id bigint REFERENCES pessoa(agente_id) ON DELETE CASCADE ON UPDATE CASCADE,
     evento_id bigint REFERENCES evento ON DELETE CASCADE ON UPDATE CASCADE,
@@ -199,9 +210,6 @@ CREATE INDEX ix_inscricao_evento_evento ON inscricao_evento(evento_id);
 CREATE INDEX ix_inscricao_sessao_fila ON inscricao_sessao
     (atividade_id, num_sessao, status, data_inscricao, inscricao_id);
 
--- 5. Concorrencia: uma escrita de dominio por vez ate COMMIT/ROLLBACK.
--- Opção simples e deliberada para este prototipo pequeno; SELECTs nao sao bloqueados.
--- Escritas usam READ COMMITTED para que as validacoes vejam o ultimo COMMIT.
 CREATE FUNCTION fn_serializar_escrita() RETURNS trigger
 LANGUAGE plpgsql VOLATILE SET search_path = public, pg_temp AS $$
 BEGIN
@@ -218,7 +226,6 @@ BEGIN
 END;
 $$;
 
--- Finalidade: especializacao total/disjunta e participacoes minimas.
 CREATE FUNCTION fn_validar_cadastros() RETURNS trigger
 LANGUAGE plpgsql VOLATILE SET search_path = public, pg_temp AS $$
 DECLARE v_id bigint;
@@ -245,7 +252,6 @@ BEGIN
 END;
 $$;
 
--- Finalidade 1: coerencia temporal, inclusive quando evento/atividade mudam.
 CREATE FUNCTION fn_validar_periodos() RETURNS trigger
 LANGUAGE plpgsql VOLATILE SET search_path = public, pg_temp AS $$
 DECLARE v record;
@@ -261,7 +267,6 @@ BEGIN
 END;
 $$;
 
--- Finalidade: alocacao corrente, autorizacao do espaco e capacidade fisica.
 CREATE FUNCTION fn_validar_alocacoes() RETURNS trigger
 LANGUAGE plpgsql VOLATILE SET search_path = public, pg_temp AS $$
 BEGIN
@@ -292,7 +297,6 @@ BEGIN
 END;
 $$;
 
--- Finalidade 2: conflitos de espaco, considerando intervalos [inicio,fim).
 CREATE FUNCTION fn_validar_conflitos() RETURNS trigger
 LANGUAGE plpgsql VOLATILE SET search_path = public, pg_temp AS $$
 BEGIN
@@ -310,7 +314,6 @@ BEGIN
 END;
 $$;
 
--- Finalidade 3: recursos necessarios, disponiveis e efetivamente alocados.
 CREATE FUNCTION fn_validar_recursos() RETURNS trigger
 LANGUAGE plpgsql VOLATILE SET search_path = public, pg_temp AS $$
 BEGIN
@@ -335,8 +338,6 @@ BEGIN
 END;
 $$;
 
--- Novas inscricoes sao validadas na entrada. Adicionais entram na fila;
--- a confirmacao e resolvida por FIFO no estado final da transacao.
 CREATE FUNCTION fn_preparar_inscricao_evento() RETURNS trigger
 LANGUAGE plpgsql VOLATILE SET search_path = public, pg_temp AS $$
 BEGIN
@@ -384,7 +385,6 @@ BEGIN
 END;
 $$;
 
--- Cancelamentos propagam para os vinculos dependentes na mesma transacao.
 CREATE FUNCTION fn_propagar_cancelamento() RETURNS trigger
 LANGUAGE plpgsql VOLATILE SET search_path = public, pg_temp AS $$
 BEGIN
@@ -418,7 +418,6 @@ BEGIN
 END;
 $$;
 
--- Finalidade 4: integridade de inscricoes, capacidade e promocao FIFO.
 CREATE FUNCTION fn_validar_inscricoes_fila() RETURNS trigger
 LANGUAGE plpgsql VOLATILE SET search_path = public, pg_temp AS $$
 DECLARE v record; v_confirmadas integer; v_vagas integer;
@@ -467,7 +466,6 @@ BEGIN
 END;
 $$;
 
--- 6. Instalacao dos gatilhos em todos os caminhos de alteracao pertinentes.
 DO $$
 DECLARE t text; r record;
 BEGIN
@@ -506,7 +504,6 @@ CREATE TRIGGER tg_20_cancelar_sessao AFTER INSERT OR UPDATE ON sessao
 CREATE TRIGGER tg_20_cancelar_inscricao AFTER INSERT OR UPDATE ON inscricao_evento
     FOR EACH ROW EXECUTE FUNCTION fn_propagar_cancelamento();
 
--- 7. Atributos derivados: nenhuma coluna de contador ou historico.
 CREATE VIEW vw_vagas_sessao AS
 SELECT s.atividade_id,s.num_sessao,a.evento_id,s.status,s.inscricao_adicional,
        l.espaco_id,p.capacidade,
@@ -531,12 +528,16 @@ LEFT JOIN (
 COMMIT;
 
 ============================================================
+
 4. CONSULTAS
+
 ============================================================
+
 CONSULTA 1
-OBJETIVO: Lista todas as sessoes do evento 2 em ordem cronologica, com atividade, horarios, duracao, situacao e espaco, incluindo sessoes ainda sem alocacao.
-SQL:
-SELECT e.evento_id, e.nome AS evento,
+
+OBJETIVO: Lista todas as sessões do evento 1 em ordem cronologica, com atividade, horarios, duração, situação e espaço, incluindo sessões ainda sem alocação.
+
+SQL: SELECT e.evento_id, e.nome AS evento,
        a.atividade_id, a.titulo AS atividade, s.num_sessao,
        s.data_hora_inicio, s.data_hora_fim, s.duracao,
        s.status AS situacao_sessao, ep.nome AS espaco,
@@ -547,13 +548,14 @@ JOIN sessao s ON s.atividade_id = a.atividade_id
 LEFT JOIN alocacao l
        ON (l.atividade_id, l.num_sessao) = (s.atividade_id, s.num_sessao)
 LEFT JOIN espaco ep ON ep.espaco_id = l.espaco_id
-WHERE e.evento_id = 2
+WHERE e.evento_id = 1
 ORDER BY s.data_hora_inicio, a.atividade_id, s.num_sessao;
 
 CONSULTA 2
-OBJETIVO: Identifica recursos ainda nao integralmente alocados para sessoes planejadas de eventos planejados ou ativos, mostrando necessario, alocado e faltante, incluindo ausencia de alocacao e desconsiderando recursos de alocacoes canceladas.
-SQL:
-WITH recursos_planejados AS (
+
+OBJETIVO: Identifica recursos ainda nao integralmente alocados para sessõees planejadas de eventos planejados ou ativos, mostrando necessário, alocado e faltante, incluindo ausência de alocação e desconsiderando recursos de alocações canceladas.
+
+SQL: WITH recursos_planejados AS (
     SELECT e.evento_id, e.nome AS evento,
            a.atividade_id, a.titulo AS atividade, s.num_sessao,
            s.data_hora_inicio, ep.nome AS espaco,
@@ -585,9 +587,10 @@ WHERE quantidade_alocada < quantidade_necessaria
 ORDER BY evento_id, atividade_id, num_sessao, recurso_id;
 
 CONSULTA 3
+
 OBJETIVO: Retorna as pessoas com inscricao confirmada no evento 5 e em todas as suas sessoes restritas confirmadas, exigindo ao menos uma sessao elegivel e desconsiderando sessoes planejadas ou canceladas.
-SQL:
-WITH parametros AS (
+
+SQL: WITH parametros AS (
     SELECT 5::bigint AS evento_id
 ),
 sessoes_restritas AS (
@@ -621,9 +624,10 @@ WHERE ie.status = 'confirmada'
 ORDER BY p.agente_id;
 
 CONSULTA 4
+
 OBJETIVO: Lista as tres primeiras pessoas de cada fila de sessao restrita confirmada em evento ativo, considerando apenas inscricoes validas e ordenando por data de inscricao e identificador para desempate.
-SQL:
-WITH fila AS (
+
+SQL: WITH fila AS (
     SELECT e.evento_id, e.nome AS evento,
            a.atividade_id, a.titulo AS atividade, s.num_sessao,
            ie.inscricao_id, p.agente_id AS pessoa_id, p.nome,
@@ -655,9 +659,10 @@ WHERE posicao <= 3
 ORDER BY evento_id, atividade_id, num_sessao, posicao;
 
 CONSULTA 5
+
 OBJETIVO: Lista espacos autorizados ao evento 2, com capacidade minima de 20 lugares e livres em 10/11/2026 das 9h as 11h, verificando conflitos com qualquer evento e permitindo horarios consecutivos sem sobreposicao.
-SQL:
-WITH parametros AS (
+
+SQL: WITH parametros AS (
     SELECT 2::bigint AS evento_id, 20 AS capacidade_minima,
            TIMESTAMP '2026-11-10 09:00' AS inicio,
            TIMESTAMP '2026-11-10 11:00' AS fim
@@ -686,5 +691,7 @@ WHERE e.status IN ('planejado', 'ativo')
 ORDER BY ep.capacidade DESC, ep.espaco_id;
 
 ============================================================
+
 FIM DO ARQUIVO
+
 ============================================================

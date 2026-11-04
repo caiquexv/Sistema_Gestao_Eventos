@@ -1,36 +1,122 @@
-INSTRUCOES DE INSTALACAO E EXECUCAO - Projeto Base de Dados
-Sistema de Gestão de Eventos e Espaços - SCC0640
+INSTRUCOES DE INSTALACAO E EXECUCAO
+SCC0640 - Projeto de Bases de Dados - Sistema de Gestao de Eventos e Espacos
 
-# Integrantes
-Breno 
-Caique Martins Costa Xavier nusp: 15573769
-Pedro Augusto Rocha Amaral nusp: 15579192
-Santiago
-Marcus
+============================================================
+INTEGRANTES
+============================================================
+Breno [COMPLETAR: sobrenome] - NUSP [COMPLETAR]
+Caique Martins Costa Xavier - NUSP 15573769
+Pedro Augusto Rocha Amaral - NUSP 15579192
+Santiago [COMPLETAR: sobrenome] - NUSP [COMPLETAR]
+Marcus [COMPLETAR: sobrenome] - NUSP [COMPLETAR]
 
-# Organizacao dos arquivos da entrega
-Extraia primeiro o ZIP geral da entrega. Na mesma pasta de Projeto.txt, extraia Prototipo.zip para uma subpasta chamada Prototipo. Essa subpasta deve conter main.py, config.json e requirements.txt; Projeto.txt deve permanecer na pasta imediatamente acima, pois o programa utiliza o DDL e as consultas desse arquivo. O config.json distribuido contem parametros de exemplo: preencha-o com os dados do PostgreSQL local antes de iniciar o programa.
+============================================================
+REQUISITOS DE SOFTWARE
+============================================================
+- PostgreSQL 16 ou superior, com o cliente psql (ou pgAdmin/DBeaver).
+- Python 3.11 ou superior.
+- Ollama instalado e em execucao, com o modelo qwen2.5-coder:3b baixado.
+- Bibliotecas Python ollama e psycopg[binary] (instaladas pelo requirements.txt).
 
-# Requisitos de software
-PostgreSQL 16 ou superior.
-Python 3.11 ou superior.
-Ollama instalado localmente, com o modelo qwen2.5-coder:3b ja baixado.
-Bibliotecas Python ollama e psycopg[binary], instaladas a partir do requirements.txt.
+============================================================
+PASSO 1 - ORGANIZAR OS ARQUIVOS
+============================================================
+Extraia Prototipo.zip na MESMA pasta em que esta o Projeto.txt. O main.py
+le o DDL do Projeto.txt na pasta imediatamente acima de Prototipo, entao a
+estrutura final deve ser:
 
-# Criacao da base:
-Crie um banco de dados chamado eventos no PostgreSQL. Em seguida execute o DDL que esta na secao 3 do arquivo Projeto.txt. O DDL cria 21 tabelas, duas views, funcoes e triggers de consistencia temporal, alocacao, recursos e inscricoes/fila, com validacoes auxiliares. Execute-o em um banco vazio.
+    <pasta>/Projeto.txt
+    <pasta>/DML.sql
+    <pasta>/Prototipo/main.py
+    <pasta>/Prototipo/config.json
+    <pasta>/Prototipo/requirements.txt
 
-# Carga dos dados
-Com as tabelas criadas e vazias, execute integralmente o arquivo DML.sql uma unica vez. Ele insere 1.686 registros ficticios, incluindo series, eventos, atividades, sessoes, espacos, recursos, pessoas, papeis e inscricoes. Demonstra tambem cancelamento, promocao da fila, reinscricao e reagendamento. Somente a programacao corrente e armazenada, sem historico.
+============================================================
+PASSO 2 - CRIAR O BANCO DE DADOS
+============================================================
+Crie um banco vazio chamado eventos (nome usado no config.json):
 
-# Execucao do protótipo
-Entre na pasta Prototipo e instale as dependencias com o comando python -m pip install -r requirements.txt. Confira os dados de conexao e o modelo no arquivo config.json e ajuste apenas esse arquivo caso necessario. Garanta que o Ollama esteja em execucao e que o modelo indicado tenha sido obtido com o comando ollama pull qwen2.5-coder:3b. Inicie o programa com python main.py.
+    createdb -U postgres eventos
 
-# Uso
-O programa apresenta um menu com tres opcoes. A primeira executa qualquer uma das cinco consultas definidas no projeto. A segunda recebe uma pergunta escrita em portugues, envia ao modelo local pelo Ollama, mostra o SQL gerado, executa a consulta em modo somente leitura e apresenta o resultado ou a mensagem de erro. A terceira encerra o programa.
+Ou, no psql / pgAdmin:  CREATE DATABASE eventos;
 
-# Modelo utilizado no Ollama
+============================================================
+PASSO 3 - CRIAR AS TABELAS (DDL)
+============================================================
+O DDL esta na secao 3 do Projeto.txt. Ele cria 21 tabelas, 2 views, funcoes
+e triggers. Execute-o UMA vez, no banco eventos vazio.
+
+Copie do Projeto.txt o trecho que comeca na linha
+    -- Sistema de Gestao de Eventos e Espacos - MER final
+e termina na linha
+    COMMIT;
+(inclusive), SEM as linhas de "=====" que delimitam a secao, e execute no
+banco eventos (psql ou Query Tool do pgAdmin).
+
+Alternativa em Linux/macOS (extrai e executa o trecho automaticamente):
+
+    sed -n '/^-- Sistema de Gestao de Eventos e Espacos/,/^COMMIT;$/p' Projeto.txt | psql -U postgres -d eventos -v ON_ERROR_STOP=1
+
+Conferencia: o comando \dt no psql deve listar 21 tabelas.
+
+============================================================
+PASSO 4 - CARREGAR OS DADOS (DML)
+============================================================
+Com as tabelas criadas e vazias, execute o DML.sql inteiro, UMA unica vez:
+
+    psql -U postgres -d eventos -v ON_ERROR_STOP=1 -f DML.sql
+
+Ele insere 1.686 registros ficticios (series, eventos, atividades, sessoes,
+espacos, recursos, pessoas, papeis e inscricoes) e demonstra cancelamento,
+promocao da fila de espera, reinscricao e reagendamento. Uma segunda execucao
+e recusada de proposito, pois as tabelas ja teriam dados.
+
+Conferencia: SELECT count(*) FROM evento;  deve retornar 11.
+
+============================================================
+PASSO 5 - EXECUTAR O PROTOTIPO
+============================================================
+1. Abra um terminal na pasta Prototipo e instale as dependencias:
+
+    python -m pip install -r requirements.txt
+
+2. Confira o config.json. Ele ja vem com os valores abaixo; ajuste somente
+   este arquivo, e somente se necessario (usuario, senha, host ou porta):
+
+    banco:   localhost:5432, dbname eventos, user postgres, password postgres
+    ollama:  http://localhost:11434, model qwen2.5-coder:3b
+
+3. Garanta que o Ollama esteja em execucao e que o modelo esteja baixado:
+
+    ollama pull qwen2.5-coder:3b
+
+4. Inicie o programa:
+
+    python main.py
+
+============================================================
+USO DO PROTOTIPO
+============================================================
+Menu com tres opcoes:
+  1 - Executa uma das 5 consultas do Projeto.txt (escolha o numero 1 a 5).
+  2 - Recebe uma pergunta em portugues, envia ao modelo local via Ollama,
+      mostra o SQL gerado, executa em modo somente leitura e exibe o
+      resultado ou a mensagem de erro.
+  3 - Encerra o programa.
+
+============================================================
+MODELO UTILIZADO NO OLLAMA
+============================================================
 qwen2.5-coder:3b
 
-# Limitações conhecidas
-A conversão de perguntas em SQL depende da qualidade do modelo local e pode produzir consultas incorretas, que são mostradas ao usuário junto com a eventual mensagem de erro do banco. A inferencia por CPU em computadores com pouca memoria pode ser lenta; a primeira pergunta tambem precisa carregar o modelo e processar o esquema.
+============================================================
+LIMITACOES CONHECIDAS
+============================================================
+- A conversao de perguntas em SQL depende da qualidade do modelo local e
+  pode gerar consultas incorretas; nesse caso o SQL e a mensagem de erro do
+  banco sao exibidos ao usuario.
+- Apenas consultas de leitura (SELECT/WITH) sao executadas na opcao 2;
+  qualquer outro comando gerado pelo modelo e bloqueado.
+- Em computadores sem GPU ou com pouca memoria a inferencia e lenta; a
+  primeira pergunta tambem precisa carregar o modelo e processar o esquema.
+- O sistema armazena somente a programacao corrente, sem historico.
