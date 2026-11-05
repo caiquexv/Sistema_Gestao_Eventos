@@ -1,25 +1,21 @@
 INSTRUCOES DE INSTALACAO E EXECUCAO
-SCC0640 - Projeto de Bases de Dados - Sistema de Gestao de Eventos e Espacos
+
 
 ============================================================
-INTEGRANTES
-============================================================
-Breno [COMPLETAR: sobrenome] - NUSP [COMPLETAR]
-Caique Martins Costa Xavier - NUSP 15573769
-Pedro Augusto Rocha Amaral - NUSP 15579192
-Santiago [COMPLETAR: sobrenome] - NUSP [COMPLETAR]
-Marcus [COMPLETAR: sobrenome] - NUSP [COMPLETAR]
 
-============================================================
 REQUISITOS DE SOFTWARE
+
 ============================================================
+
 - PostgreSQL 16 ou superior, com o cliente psql (ou pgAdmin/DBeaver).
 - Python 3.11 ou superior.
 - Ollama instalado e em execucao, com o modelo qwen2.5-coder:3b baixado.
 - Bibliotecas Python ollama e psycopg[binary] (instaladas pelo requirements.txt).
 
 ============================================================
+
 PASSO 1 - ORGANIZAR OS ARQUIVOS
+
 ============================================================
 Extraia Prototipo.zip na MESMA pasta em que esta o Projeto.txt. O main.py
 le o DDL do Projeto.txt na pasta imediatamente acima de Prototipo, entao a
@@ -32,7 +28,9 @@ estrutura final deve ser:
     <pasta>/Prototipo/requirements.txt
 
 ============================================================
+
 PASSO 2 - CRIAR O BANCO DE DADOS
+
 ============================================================
 Crie um banco vazio chamado eventos (nome usado no config.json):
 
@@ -41,7 +39,9 @@ Crie um banco vazio chamado eventos (nome usado no config.json):
 Ou, no psql / pgAdmin:  CREATE DATABASE eventos;
 
 ============================================================
+
 PASSO 3 - CRIAR AS TABELAS (DDL)
+
 ============================================================
 O DDL esta na secao 3 do Projeto.txt. Ele cria 21 tabelas, 2 views, funcoes
 e triggers. Execute-o UMA vez, no banco eventos vazio.
@@ -60,7 +60,9 @@ Alternativa em Linux/macOS (extrai e executa o trecho automaticamente):
 Conferencia: o comando \dt no psql deve listar 21 tabelas.
 
 ============================================================
+
 PASSO 4 - CARREGAR OS DADOS (DML)
+
 ============================================================
 Com as tabelas criadas e vazias, execute o DML.sql inteiro, UMA unica vez:
 
@@ -74,7 +76,9 @@ e recusada de proposito, pois as tabelas ja teriam dados.
 Conferencia: SELECT count(*) FROM evento;  deve retornar 11.
 
 ============================================================
+
 PASSO 5 - EXECUTAR O PROTOTIPO
+
 ============================================================
 1. Abra um terminal na pasta Prototipo e instale as dependencias:
 
@@ -95,7 +99,9 @@ PASSO 5 - EXECUTAR O PROTOTIPO
     python main.py
 
 ============================================================
+
 USO DO PROTOTIPO
+
 ============================================================
 Menu com tres opcoes:
   1 - Executa uma das 5 consultas do Projeto.txt (escolha o numero 1 a 5).
@@ -105,16 +111,23 @@ Menu com tres opcoes:
   3 - Encerra o programa.
 
 ============================================================
+
 MODELO UTILIZADO NO OLLAMA
+
 ============================================================
+
 qwen2.5-coder:3b
 
 ============================================================
+
 LIMITACOES CONHECIDAS
+
 ============================================================
 - A conversao de perguntas em SQL depende da qualidade do modelo local e
   pode gerar consultas incorretas; nesse caso o SQL e a mensagem de erro do
   banco sao exibidos ao usuario.
 - Em computadores sem GPU ou com pouca memoria a inferencia e lenta; a
   primeira pergunta tambem precisa carregar o modelo e processar o esquema.
-- O sistema armazena somente a programacao corrente, sem historico.
+- O sistema armazena somente a programacao corrente, sem historico
+
+ 

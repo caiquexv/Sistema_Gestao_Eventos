@@ -1,18 +1,4 @@
 ============================================================
-SCC0640 - PROJETO DE BASES DE DADOS
-============================================================
-
-GRUPO: 
-INTEGRANTES: 
-Breno 
-Caique Martins Costa Xavier  nusp: 15573769
-Pedro Augusto Rocha Amaral   nusp: 15579
-Santiago Vera Martins    nusp: 15487982
-Marcus Vinicius Bravim Alves    nusp: 15474953
-
-MODELO UTILIZADO NO OLLAMA: qwen2.5-coder:3b
-
-============================================================
 
 1. DESCRICAO FINAL DO SISTEMA
 
@@ -690,8 +676,3 @@ WHERE e.status IN ('planejado', 'ativo')
   )
 ORDER BY ep.capacidade DESC, ep.espaco_id;
 
-============================================================
-
-FIM DO ARQUIVO
-
-============================================================

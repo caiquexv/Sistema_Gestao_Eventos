@@ -1,7 +1,3 @@
--- Sistema de Gestao de Eventos e Espacos — MER final
--- PostgreSQL 16+; executar em banco vazio. Nao remove estruturas existentes.
--- Horarios da programacao: America/Sao_Paulo, armazenados sem conversao de fuso.
--- Cadastro/carga em transacoes READ COMMITTED; validacoes compostas no COMMIT.
 BEGIN;
 SET LOCAL search_path = public;
 
